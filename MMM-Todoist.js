@@ -36,7 +36,7 @@ Module.register("MMM-Todoist", {
 	defaults: {
 		maximumEntries: 10,
 		projects: ["inbox"],
-    labels: [""],
+    	labels: [""],
 		updateInterval: 10 * 60 * 1000, // every 10 minutes,
 		fade: true,
 		fadePoint: 0.25,
@@ -173,7 +173,7 @@ Module.register("MMM-Todoist", {
 			var currentLine = "";
 			var words = string.split(" ");
 
-			for (var i = 0; i < words.length; i++) {
+			for (var i = 0; i < words.length; i += 1) {
 				var word = words[i];
 				if (currentLine.length + word.length < (typeof maxLength === "number" ? maxLength : 25) - 1) { // max - 1 to account for a space
 					currentLine += (word + " ");
@@ -231,7 +231,7 @@ Module.register("MMM-Todoist", {
 		if (tasks.items == undefined) {
 			return;
 		}
-    
+
     // Loop through labels fetched from API and find corresponding label IDs for task filtering
     // Could be re-used for project names -> project IDs.
     if (self.config.labels.length>0 && tasks.labels != undefined) {
@@ -263,7 +263,7 @@ Module.register("MMM-Todoist", {
 
 
 		//Filter the Todos by the Projects and Label specified in the Config
-		tasks.items.forEach(function (item) {      
+		tasks.items.forEach(function (item) {
 
       var isAdded=0; // To prevent a task in added twice. Far from fancy, can be improved. But it works.
 
@@ -297,7 +297,7 @@ Module.register("MMM-Todoist", {
 		items.forEach(function (item) {
 			if (item.due === null) {
 				item.due = {}
-				item.due["date"] = "2100-12-31";
+				item.due.date = "2100-12-31";
 				item.all_day = true;
 			}
 			//Not used right now
@@ -389,7 +389,7 @@ Module.register("MMM-Todoist", {
 		// create mapping from user id to collaborator index
 		var collaboratorsMap = new Map();
 
-		for (var value=0; value < this.tasks.collaborators.length; value++) {
+		for (var value=0; value < this.tasks.collaborators.length; value += 1) {
 			collaboratorsMap.set( this.tasks.collaborators[value].id, value );
 		}
 
@@ -397,7 +397,7 @@ Module.register("MMM-Todoist", {
 
 
 		/* iterate through items, i.e. todo's */
-		for (var i = 0; i < this.tasks.items.length; i++) {
+		for (var i = 0; i < this.tasks.items.length; i += 1) {
 			var item = this.tasks.items[i];
 			var row = document.createElement("tr");
 			table.appendChild(row);
@@ -519,9 +519,11 @@ Module.register("MMM-Todoist", {
 
 				var colIndex = collaboratorsMap.get(item.responsible_uid);
 				if (typeof colIndex !== 'undefined') {
-					
+
 					avatarImg.src = "https://dcff1xvirvpfp.cloudfront.net/" + this.tasks.collaborators[colIndex].image_id + "_big.jpg";
-				} else avatarImg.src = "/modules/MMM-Todoist/1x1px.png";
+				} else {
+                    avatarImg.src = "/modules/MMM-Todoist/1x1px.png";
+                }
 
 				avatarCell.appendChild(avatarImg);
 				row.appendChild(avatarCell);

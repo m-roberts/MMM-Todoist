@@ -57,7 +57,7 @@ module.exports = NodeHelper.create({
 			}
 			else{
 				console.log("Todoist api request status="+response.statusCode)
-			} 
+			}
 
 		});
 	}

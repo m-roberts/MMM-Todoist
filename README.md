@@ -1,7 +1,7 @@
 
 # MMM-Todoist
 This an extension for the [MagicMirror](https://github.com/MichMich/MagicMirror). It can display your Todoist todos. You can add multiple instances with different lists. Only one account supported.
-The requests to the server will be paused is the module is not displayed (use of a carousel or hidden by Remote-Control for example) or by the use of a PIR sensor and the module MMM-PIR-Sensor. An immediate update will occurs at the return of the module display. 
+The requests to the server will be paused is the module is not displayed (use of a carousel or hidden by Remote-Control for example) or by the use of a PIR sensor and the module MMM-PIR-Sensor. An immediate update will occurs at the return of the module display.
 
 ## Installation
 1. Navigate into your MagicMirror's `modules` folder and execute `git clone https://github.com/cbrooker/MMM-Todoist.git`. A new folder will appear navigate into it.
@@ -20,9 +20,9 @@ modules: [
 			accessToken: 'accessToken from Todoist',
 			maximumEntries: 60,
 			updateInterval: 10*60*1000, // Update every 10 minutes
-			fade: false,      
+			fade: false,
 			// projects and/or labels is mandatory:
-			projects: [ 166564794 ], 
+			projects: [ 166564794 ],
 			labels: [ "MagicMirror", "Important" ] // Tasks for any projects with these labels will be shown.
       }
 	}
@@ -48,7 +48,7 @@ The following properties can be configured:
 			<td>Your Todoist access token, you can get it <a href="https://developer.todoist.com/appconsole.html">here</a>.<br>
 				<br><b>Possible values:</b> <code>string</code>
 				<br><b>Default value:</b> <code>none</code>
-				<br><b>Note:</b> It is possible to use the "Test token" and so not to follow the steps of oAuth token. For the web site value requested, you can use "http://example.com" if you don't have a website. 
+				<br><b>Note:</b> It is possible to use the "Test token" and so not to follow the steps of oAuth token. For the web site value requested, you can use "http://example.com" if you don't have a website.
 			</td>
 		</tr>
 		<tr>
@@ -180,8 +180,8 @@ The following properties can be configured:
 				<br><b>Possible values:</b> <code>boolean</code>
 				<br><b>Default value:</b> <code>false</code>
 			</td>
-		</tr>		
-		
+		</tr>
+
 	</tbody>
 </table>
 
@@ -190,7 +190,7 @@ The following properties can be configured:
 
 
 # Screen shots
-A few sample Screen Shots to show you what this module looks like. It's fairly configurable and changes considerably depending on how you use Todoist, how many projects you include, and how you sort.  
+A few sample Screen Shots to show you what this module looks like. It's fairly configurable and changes considerably depending on how you use Todoist, how many projects you include, and how you sort.
 
 Option enabled: displayAvatar: true
 ![My image](https://raw.githubusercontent.com/thyed/MMM-Todoist/master/todoist-avatars.png)
@@ -199,25 +199,25 @@ Option enabled: displayLastUpdate: true, wrapEvents: true, maxTitleLenght: 25
 ![My image](https://github.com/AgP42/MMM-Todoist/blob/master/todoist.png)
 
 Options enabled: orderBy:todoist, showProjects: true
-![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/1.png)  
+![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/1.png)
 
 Options enabled: orderBy:dueDateAsc, showProjects: true
-![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/2.png)  
+![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/2.png)
 
 Options enabled: orderBy:dueDateAsc, showProjects: false
-![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/3.png)  
+![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/3.png)
 
 Options enabled: orderBy:todoist, showProjects: false
-![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/4.png)  
+![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/4.png)
 
 Options enabled: orderBy:todoist, showProjects: true
-![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/5.png)  
+![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/5.png)
 
 Options enabled: orderBy:dueDateAsc, showProjects: true
-![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/6.png)  
+![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/6.png)
 
 Options enabled: orderBy:dueDateAsc, showProjects: false
-![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/7.png)  
+![My image](http://cbrooker.github.io/MMM-Todoist/Screenshots/7.png)
 
 
 ## Attribution
