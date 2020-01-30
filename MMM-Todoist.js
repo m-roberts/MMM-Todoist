@@ -36,7 +36,7 @@ Module.register("MMM-Todoist", {
 	defaults: {
 		maximumEntries: 10,
 		projects: ["inbox"],
-    	labels: [""],
+		labels: [""],
 		updateInterval: 10 * 60 * 1000, // every 10 minutes,
 		fade: true,
 		fadePoint: 0.25,
@@ -58,12 +58,11 @@ Module.register("MMM-Todoist", {
 			"#5db2ff", "#0072c6", "#000000", "#777777"
 		], //These colors come from Todoist and their order matters if you want the colors to match your Todoist project colors.
 
-		//This has been designed to use the Todoist Sync API.
-		apiVersion: "v8",
-		apiBase: "https://todoist.com/API",
-		todoistEndpoint: "sync",
-
-		todoistResourceType: "[\"items\", \"projects\", \"collaborators\"]", // thyed added user
+		//This has been designed to use the Todoist REST API.
+		apiBase: "https://api.todoist.com",
+		apiType: "rest",
+		apiVersion: "v1",
+		todoistEndpoint: "tasks",
 
 		debug: false,
 	},
@@ -219,7 +218,7 @@ Module.register("MMM-Todoist", {
 	filterTodoistData: function (tasks) {
 		var self = this;
 		var items = [];
-    var labelIds = [];
+		var labelIds = [];
 
 
 		if (tasks == undefined) {
@@ -232,18 +231,18 @@ Module.register("MMM-Todoist", {
 			return;
 		}
 
-    // Loop through labels fetched from API and find corresponding label IDs for task filtering
-    // Could be re-used for project names -> project IDs.
-    if (self.config.labels.length>0 && tasks.labels != undefined) {
-      for (let apiLabel of tasks.labels) {
-        for (let configLabelName of self.config.labels) {
-          if (apiLabel.name == configLabelName) {
-            labelIds.push(apiLabel.id);
-            break;
-          }
-        }
-      }
-    }
+		// Loop through labels fetched from API and find corresponding label IDs for task filtering
+		// Could be re-used for project names -> project IDs.
+		if (self.config.labels.length > 0 && tasks.labels != undefined) {
+			for (let apiLabel of tasks.labels) {
+				for (let configLabelName of self.config.labels) {
+					if (apiLabel.name == configLabelName) {
+						labelIds.push(apiLabel.id);
+						break;
+					}
+				}
+			}
+		}
 
 		if (self.config.displayTasksWithinDays > -1 || !self.config.displayTasksWithoutDue) {
 			tasks.items = tasks.items.filter(function (item) {
@@ -264,33 +263,30 @@ Module.register("MMM-Todoist", {
 
 		//Filter the Todos by the Projects and Label specified in the Config
 		tasks.items.forEach(function (item) {
+			var isAdded = 0; // To prevent a task in added twice. Far from fancy, can be improved. But it works.
 
-      var isAdded=0; // To prevent a task in added twice. Far from fancy, can be improved. But it works.
+			// Filter using label if a label is configured
+			if (labelIds.length > 0 && item.labels.length > 0) {
+				// Check all the labels assigned to the task. Add to items if match with configured label
+				for (let label of item.labels) {
+					for (let labelNumber of labelIds) {
+						if (label == labelNumber && isAdded == 0) {
+							items.push(item);
+							isAdded=1; // Prevent double additions
+							break;
+						}
+					}
+				}
+			}
 
-      // Filter using label if a label is configured
-      if (labelIds.length>0 && item.labels.length > 0) {
-        // Check all the labels assigned to the task. Add to items if match with configured label
-        for (let label of item.labels) {
-          for (let labelNumber of labelIds) {
-            if (label == labelNumber && isAdded==0) {
-              items.push(item);
-              isAdded=1; // Prevent double additions
-              break;
-            }
-          }
-        }
-      }
-
-      // Filter using projets if projects are configured
-      if (isAdded==0 && self.config.projects.length>0){
-			  self.config.projects.forEach(function (project) {
-			  	if (item.project_id == project) {
-            items.push(item);
-			  	}
-			  });
-      }
-
-
+			// Filter using projets if projects are configured
+			if (isAdded == 0 && self.config.projects.length > 0) {
+				self.config.projects.forEach(function (project) {
+					if (item.project_id == project) {
+						items.push(item);
+					}
+				});
+			}
 		});
 
 		//Used for ordering by date
@@ -300,6 +296,7 @@ Module.register("MMM-Todoist", {
 				item.due.date = "2100-12-31";
 				item.all_day = true;
 			}
+
 			//Not used right now
 			item.ISOString = new Date(item.due.date);
 
@@ -311,7 +308,6 @@ Module.register("MMM-Todoist", {
 				item.all_day = true
 			}
 		});
-
 
 		//***** Sorting code if you want to add new methods. */
 		switch (self.config.sortType) {
@@ -367,7 +363,6 @@ Module.register("MMM-Todoist", {
 
 
 	getDom: function () {
-
 		//Add a new div to be able to display the update time alone after all the task
 		var wrapper = document.createElement("div");
 
@@ -522,8 +517,8 @@ Module.register("MMM-Todoist", {
 
 					avatarImg.src = "https://dcff1xvirvpfp.cloudfront.net/" + this.tasks.collaborators[colIndex].image_id + "_big.jpg";
 				} else {
-                    avatarImg.src = "/modules/MMM-Todoist/1x1px.png";
-                }
+					avatarImg.src = "/modules/MMM-Todoist/1x1px.png";
+				}
 
 				avatarCell.appendChild(avatarImg);
 				row.appendChild(avatarCell);
