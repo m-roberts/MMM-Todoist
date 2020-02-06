@@ -67,6 +67,12 @@ Module.register("MMM-Todoist", {
 		debug: false,
 	},
 
+	getScripts: function() {
+		return [
+			'moment.js'
+		]
+	},
+
 	// Define required scripts.
 	getStyles: function () {
 		return ["MMM-Todoist.css"];
@@ -200,13 +206,23 @@ Module.register("MMM-Todoist", {
 	// Override socket notification handler.
 	socketNotificationReceived: function (notification, payload) {
 		if (notification === "TASKS") {
-			this.filterTodoistData(payload);
+			Log.log(payload)
 
-			if (this.config.displayLastUpdate) {
-				this.lastUpdate = Date.now() / 1000; //save the timestamp of the last update to be able to display it
+			if (payload.accessToken != this.config.accessToken) {
+				// This means that the node_helper is working for a different instance!
+				Log.log("Tasks access token does not match config...")
+				Log.log(payload.accessToken + " != " + this.config.accessToken)
+				return;
 			}
 
-			Log.log("ToDoIst update OK, project : " + this.config.projects + " at : " + moment.unix(this.lastUpdate).format(this.config.displayLastUpdateFormat)); //AgP
+			this.filterTodoistData(payload.tasks);
+
+			this.lastUpdate = moment.unix(Date.now() / 1000)
+				.format(this.config.displayLastUpdateFormat);
+
+			Log.log("Todoist tasks fetched: " + this.lastUpdate);
+
+			// TODO: specify which project/label was used, if relevant
 
 			this.loaded = true;
 			this.updateDom(1000);
@@ -217,35 +233,16 @@ Module.register("MMM-Todoist", {
 
 	filterTodoistData: function (tasks) {
 		var self = this;
-		var items = [];
 		var labelIds = [];
 
-
 		if (tasks == undefined) {
-			return;
-		}
-		if (tasks.accessToken != self.config.accessToken) {
-			return;
-		}
-		if (tasks.items == undefined) {
+			Log.log("Tasks undefined...")
 			return;
 		}
 
-		// Loop through labels fetched from API and find corresponding label IDs for task filtering
-		// Could be re-used for project names -> project IDs.
-		if (self.config.labels.length > 0 && tasks.labels != undefined) {
-			for (let apiLabel of tasks.labels) {
-				for (let configLabelName of self.config.labels) {
-					if (apiLabel.name == configLabelName) {
-						labelIds.push(apiLabel.id);
-						break;
-					}
-				}
-			}
-		}
-
+		Log.log("Filter out tasks that are not due within user specified time frame...")
 		if (self.config.displayTasksWithinDays > -1 || !self.config.displayTasksWithoutDue) {
-			tasks.items = tasks.items.filter(function (item) {
+			tasks = tasks.filter(function (item) {
 				if (item.due === null) {
 					return self.config.displayTasksWithoutDue;
 				}
@@ -260,44 +257,15 @@ Module.register("MMM-Todoist", {
 			});
 		}
 
-
-		//Filter the Todos by the Projects and Label specified in the Config
-		tasks.items.forEach(function (item) {
-			var isAdded = 0; // To prevent a task in added twice. Far from fancy, can be improved. But it works.
-
-			// Filter using label if a label is configured
-			if (labelIds.length > 0 && item.labels.length > 0) {
-				// Check all the labels assigned to the task. Add to items if match with configured label
-				for (let label of item.labels) {
-					for (let labelNumber of labelIds) {
-						if (label == labelNumber && isAdded == 0) {
-							items.push(item);
-							isAdded=1; // Prevent double additions
-							break;
-						}
-					}
-				}
-			}
-
-			// Filter using projets if projects are configured
-			if (isAdded == 0 && self.config.projects.length > 0) {
-				self.config.projects.forEach(function (project) {
-					if (item.project_id == project) {
-						items.push(item);
-					}
-				});
-			}
-		});
-
+		Log.log("Order tasks by date...")
 		//Used for ordering by date
-		items.forEach(function (item) {
-			if (item.due === null) {
+		tasks.forEach(function (item) {
+			if (item.due === undefined) {
 				item.due = {}
 				item.due.date = "2100-12-31";
 				item.all_day = true;
 			}
 
-			//Not used right now
 			item.ISOString = new Date(item.due.date);
 
 			// as v8 API does not have 'all_day' field anymore then check due.date for presence of time
@@ -312,28 +280,24 @@ Module.register("MMM-Todoist", {
 		//***** Sorting code if you want to add new methods. */
 		switch (self.config.sortType) {
 			case "todoist":
-				sorteditems = self.sortByTodoist(items);
+				tasks = self.sortByTodoist(tasks);
 				break;
 			case "dueDateAsc":
-				sorteditems = self.sortByDueDateAsc(items);
+				tasks = self.sortByDueDateAsc(tasks);
 				break;
 			case "dueDateDesc":
-				sorteditems = self.sortByDueDateDesc(items);
+				tasks = self.sortByDueDateDesc(tasks);
 				break;
 			default:
-				sorteditems = self.sortByTodoist(items);
+				tasks = self.sortByTodoist(tasks);
 				break;
 		}
 
+		Log.log("Remove entries greater than specified maximum...")
 		//Slice by max Entries
-		items = items.slice(0, this.config.maximumEntries);
+		tasks = tasks.slice(0, this.config.maximumEntries);
 
-		this.tasks = {
-			"items": items,
-			"projects": tasks.projects,
-			"collaborators": tasks.collaborators
-		};
-
+		this.tasks = tasks;
 	},
 	sortByTodoist: function (itemstoSort) {
 		itemstoSort.sort(function (a, b) {
@@ -381,19 +345,22 @@ Module.register("MMM-Todoist", {
 		}
 
 
-		// create mapping from user id to collaborator index
-		var collaboratorsMap = new Map();
+		// // create mapping from user id to collaborator index
+		// var collaboratorsMap = new Map();
 
-		for (var value=0; value < this.tasks.collaborators.length; value += 1) {
-			collaboratorsMap.set( this.tasks.collaborators[value].id, value );
-		}
+		// for (var value=0; value < this.tasks.collaborators.length; value += 1) {
+		// 	collaboratorsMap.set( this.tasks.collaborators[value].id, value );
+		// }
 
-		console.log(collaboratorsMap);
+		// console.log(collaboratorsMap);
+
+		Log.log(this.tasks)
+		Log.log(this.tasks.length)
 
 
 		/* iterate through items, i.e. todo's */
-		for (var i = 0; i < this.tasks.items.length; i += 1) {
-			var item = this.tasks.items[i];
+		for (var i = 0; i < this.tasks.length; i += 1) {
+			var item = this.tasks[i];
 			var row = document.createElement("tr");
 			table.appendChild(row);
 
@@ -491,46 +458,46 @@ Module.register("MMM-Todoist", {
 			}
 			row.appendChild(dueDateCell);
 
-			/* cell for project */
-			if (this.config.showProject) {
-				var spacerCell2 = document.createElement("td");
-				spacerCell2.className = "spacerCell";
-				spacerCell2.innerHTML = "";
-				row.appendChild(spacerCell2);
+			// /* cell for project */
+			// if (this.config.showProject) {
+			// 	var spacerCell2 = document.createElement("td");
+			// 	spacerCell2.className = "spacerCell";
+			// 	spacerCell2.innerHTML = "";
+			// 	row.appendChild(spacerCell2);
 
-				var project = this.tasks.projects.find(p => p.id === item.project_id);
-				var projectcolor = this.config.projectColors[project.color];
-				var projectCell = document.createElement("td");
-				projectCell.className = "xsmall";
-				projectCell.innerHTML = project.name + "<span class='projectcolor' style='color: " + projectcolor + "; background-color: " + projectcolor + "'></span>";
-				row.appendChild(projectCell);
-			}
+			// 	var project = this.tasks.projects.find(p => p.id === item.project_id);
+			// 	var projectcolor = this.config.projectColors[project.color];
+			// 	var projectCell = document.createElement("td");
+			// 	projectCell.className = "xsmall";
+			// 	projectCell.innerHTML = project.name + "<span class='projectcolor' style='color: " + projectcolor + "; background-color: " + projectcolor + "'></span>";
+			// 	row.appendChild(projectCell);
+			// }
 
-			/* cell for assignee avatar */
-			if (this.config.displayAvatar) {
-				var avatarCell = document.createElement("td");
-				var avatarImg = document.createElement("img");
-				avatarImg.className = "todoAvatarImg";
+			// /* cell for assignee avatar */
+			// if (this.config.displayAvatar) {
+			// 	var avatarCell = document.createElement("td");
+			// 	var avatarImg = document.createElement("img");
+			// 	avatarImg.className = "todoAvatarImg";
 
-				var colIndex = collaboratorsMap.get(item.responsible_uid);
-				if (typeof colIndex !== 'undefined') {
+			// 	var colIndex = collaboratorsMap.get(item.responsible_uid);
+			// 	if (typeof colIndex !== 'undefined') {
 
-					avatarImg.src = "https://dcff1xvirvpfp.cloudfront.net/" + this.tasks.collaborators[colIndex].image_id + "_big.jpg";
-				} else {
-					avatarImg.src = "/modules/MMM-Todoist/1x1px.png";
-				}
+			// 		avatarImg.src = "https://dcff1xvirvpfp.cloudfront.net/" + this.tasks.collaborators[colIndex].image_id + "_big.jpg";
+			// 	} else {
+			// 		avatarImg.src = "/modules/MMM-Todoist/1x1px.png";
+			// 	}
 
-				avatarCell.appendChild(avatarImg);
-				row.appendChild(avatarCell);
-			}
+			// 	avatarCell.appendChild(avatarImg);
+			// 	row.appendChild(avatarCell);
+			// }
 
 			// Create fade effect by MichMich (MIT)
 			if (this.config.fade && this.config.fadePoint < 1) {
 				if (this.config.fadePoint < 0) {
 					this.config.fadePoint = 0;
 				}
-				var startingPoint = this.tasks.items.length * this.config.fadePoint;
-				var steps = this.tasks.items.length - startingPoint;
+				var startingPoint = this.tasks.length * this.config.fadePoint;
+				var steps = this.tasks.length - startingPoint;
 				if (i >= startingPoint) {
 					var currentStep = i - startingPoint;
 					row.style.opacity = 1 - (1 / steps * currentStep);
@@ -546,9 +513,11 @@ Module.register("MMM-Todoist", {
 
 			var updateinfo = document.createElement("div");
 			updateinfo.className = "xsmall light align-left";
-			updateinfo.innerHTML = "Update : " + moment.unix(this.lastUpdate).format(this.config.displayLastUpdateFormat);
+			updateinfo.innerHTML = "Update : " + this.lastUpdate;
 			wrapper.appendChild(updateinfo);
 		}
+
+		Log.log("Returning wrapper")
 
 		return wrapper;
 	}

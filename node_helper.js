@@ -54,13 +54,14 @@ module.exports = NodeHelper.create({
 				});
 				return console.error(" ERROR - MMM-Todoist: " + error);
 			}
-			if (self.config.debug) {
-				console.log(body)
-			}
 			if (response.statusCode === 200) {
-				var taskJson = JSON.parse(body);
-				taskJson.accessToken = self.config.accessToken;
-				self.sendSocketNotification("TASKS", taskJson);
+				var payload = {};
+				payload.tasks = JSON.parse(body);
+				payload.accessToken = self.config.accessToken;
+				if (self.config.debug) {
+					console.log(payload)
+				}
+				self.sendSocketNotification("TASKS", payload);
 			}
 			else {
 				console.log("Todoist API request status: " + response.statusCode)
